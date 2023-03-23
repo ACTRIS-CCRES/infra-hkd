@@ -10,11 +10,11 @@ from notification_policies import GrafanaRouteModel, GrafanaRegexpsMatcherModel,
 from alert_manager import GrafanaAlertManager, GrafanaAlertRuleManager
 from base import GrafanaSerializer, AcceptableCodes
 
-load_dotenv()
+load_dotenv("../env.dev")
 
 GRAFANA_API_URL = "http://localhost:3000/api"
 GRAFANA_AUTH = requests.auth.HTTPBasicAuth(
-    os.environ.get("DOCKER_GRAFANA_USERNAME"), os.environ.get("DOCKER_GRAFANA_PASSWORD")
+    os.environ.get("GRAFANA_USERNAME"), os.environ.get("GRAFANA_PASSWORD")
 )
 
 # One folder per station
