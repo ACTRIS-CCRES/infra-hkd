@@ -16,7 +16,21 @@ class GrafanaMatchType(str, Enum):
 
 
 @dataclass
-class GrafanaRegexpsMatcherModel(GrafanaSerializer):
+class ModelGrafanaRegexpsMatcher(GrafanaSerializer):
+    """Model to match the labels and raise alert
+
+
+    Parameters
+    ----------
+    name: str
+        Name of the label
+    type: GrafanaMatchType
+        How to compare label with the value
+    value: str
+        Value of the label
+
+    """
+
     name: str
     type: GrafanaMatchType
     value: str
@@ -29,11 +43,11 @@ class GrafanaRegexpsMatcherModel(GrafanaSerializer):
 
 
 @dataclass
-class GrafanaRouteModel(GrafanaSerializer):
+class ModelGrafanaRoute(GrafanaSerializer):
     # Name of the contact point
     receiver: Optional[str] = None
     # Tags to be used
-    object_matchers: Optional[List[GrafanaRegexpsMatcherModel]] = None
+    object_matchers: Optional[List[ModelGrafanaRegexpsMatcher]] = None
     _continue: Optional[str] = None
     groupBy: Optional[List[str]] = None
     groupInterval: Optional[str] = None
