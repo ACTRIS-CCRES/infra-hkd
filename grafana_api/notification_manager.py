@@ -4,8 +4,7 @@ from typing import Any, Dict, Union
 import requests
 from addons.contact import ContactPoint
 from addons.notification_policies import Notification
-from base import AcceptableCodes
-from grafanalib.core import AlertGroup
+from base import AcceptableCodes,get_encodable_dict
 
 
 class NotificationManager:
@@ -58,7 +57,8 @@ class NotificationManager:
         return self
 
     def push(self) -> requests.Response:
-        res: requests.Response = self.session.post(self.endpoint, json=self.config)
+        json_d = get_encodable_dict(self.config)
+        res: requests.Response = self.session.post(self.endpoint, json=json_d)
         if res.status_code not in AcceptableCodes.list():
             msg = f"[{res.status_code}] : {res.content}"
             if res.status_code == 400:

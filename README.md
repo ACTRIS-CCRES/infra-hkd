@@ -12,6 +12,10 @@ docker-compose --env-file .env.dev up
     from addons.contact import ContactPointEmail, ContactPointEmailSettings
     from notification_manager import NotificationManager
 
+    contact_point = ContactPointEmail(
+        "New contact point", ContactPointEmailSettings(addresses=["a@c.d"])
+    )
+
     GRAFANA_API_URL = "http://localhost:3000/api"
     GRAFANA_AUTH = requests.auth.HTTPBasicAuth("admin", "admin")
 
@@ -20,10 +24,6 @@ docker-compose --env-file .env.dev up
     session.headers.update({"x-disable-provenance": "true"})
 
     notification_manager = NotificationManager(GRAFANA_API_URL, session)
-    contact_point = ContactPointEmail(
-        "New contact point", ContactPointEmailSettings(addresses=["a@c.d"])
-    )
-
     notification_manager.add_contact_point(contact_point)
     notification_manager.push()
 ```
@@ -34,6 +34,13 @@ docker-compose --env-file .env.dev up
     from addons.notification_policies import Notification, RegexMatcher, GrafanaMatchType
     from notification_manager import NotificationManager
 
+    notification_policy = Notification(
+        "New contact point",
+        object_matchers=[
+            RegexMatcher("TEAM", GrafanaMatchType.EQUAL.value, "dev")
+        ],
+    )
+
     GRAFANA_API_URL = "http://localhost:3000/api"
     GRAFANA_AUTH = requests.auth.HTTPBasicAuth("admin", "admin")
 
@@ -42,15 +49,8 @@ docker-compose --env-file .env.dev up
     session.headers.update({"x-disable-provenance": "true"})
 
     notification_manager = NotificationManager(GRAFANA_API_URL, session)
-
-    notification_policy = Notification(
-        "New contact point",
-        object_matchers=[
-            RegexMatcher("TEAM", GrafanaMatchType.EQUAL.value, "dev")
-        ],
-    )
-    alert_manager.add_notification_policy(notification_policy)
-    alert_manager.push()
+    notification_manager.add_notification_policy(notification_policy)
+    notification_manager.push()
 ```
 
 ## Add an alert
@@ -59,7 +59,7 @@ Adding an alert is quite tricky, It relies on the Alert models from the grafanal
 Please see 
 - https://github.com/weaveworks/grafanalib
 - https://grafanalib.readthedocs.io/en/stable/
-- 
+
 It is much more easier to start from this example and build your own rule.
 
 ```python
@@ -121,9 +121,9 @@ It is much more easier to start from this example and build your own rule.
             ),
         ]
     )
+    
     GRAFANA_API_URL = "http://localhost:3000/api"
     GRAFANA_AUTH = requests.auth.HTTPBasicAuth("admin", "admin")
-
 
     session = requests.Session()
     session.auth = GRAFANA_AUTH
@@ -133,6 +133,75 @@ It is much more easier to start from this example and build your own rule.
     alert_rule_manager.add_alert(alertgroup, folder="My custom folder")
     alert_rule_manager.push()
 
+```
+
+## Add a Dashboard
+
+```python 
+    from dashboard_manager import DashboardManager
+    from grafanalib.core import (
+        Dashboard, TimeSeries, GaugePanel,
+        Target, GridPos,
+        OPS_FORMAT
+    )
+
+    dashboard = Dashboard(
+        title="Python generated example dashboard",
+        description="Example dashboard using the Random Walk and default Prometheus datasource",
+        tags=[
+            'example'
+        ],
+        timezone="browser",
+        panels=[
+            TimeSeries(
+                title="Random Walk",
+                dataSource='default',
+                targets=[
+                    Target(
+                        datasource='grafana',
+                        expr='example',
+                    ),
+                ],
+                gridPos=GridPos(h=8, w=16, x=0, y=0),
+            ),
+            GaugePanel(
+                title="Random Walk",
+                dataSource='default',
+                targets=[
+                    Target(
+                        datasource='grafana',
+                        expr='example',
+                    ),
+                ],
+                gridPos=GridPos(h=4, w=4, x=17, y=0),
+            ),
+            TimeSeries(
+                title="Prometheus http requests",
+                dataSource='prometheus',
+                targets=[
+                    Target(
+                        expr='rate(prometheus_http_requests_total[5m])',
+                        legendFormat="{{ handler }}",
+                        refId='A',
+                    ),
+                ],
+                unit=OPS_FORMAT,
+                gridPos=GridPos(h=8, w=16, x=0, y=10),
+            ),
+        ],
+    ).auto_panel_ids()
+
+    GRAFANA_API_URL = "http://localhost:3000/api"
+    GRAFANA_AUTH = requests.auth.HTTPBasicAuth("admin", "admin")
+
+
+    session = requests.Session()
+    session.auth = GRAFANA_AUTH
+    session.headers.update({"x-disable-provenance": "true"})
+    dashboard_manager = DashboardManager(GRAFANA_API_URL, session)
+
+    dashboard_manager.add_dashboard(dashboard)
+    dashboard_manager.push()
 ```
 
 ## Build a flux query 

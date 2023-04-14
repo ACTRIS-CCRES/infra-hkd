@@ -4,8 +4,7 @@ from dotenv import load_dotenv
 load_dotenv("../.env.dev")
 
 def main():
-    pass
-
+    pass 
 
 if __name__ == "__main__":
 

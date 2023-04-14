@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 import requests
-from base import AcceptableCodes
+from base import AcceptableCodes, get_encodable_dict
 from grafanalib.core import AlertGroup
 
 
@@ -34,8 +34,9 @@ class AlertManager:
         responses = []
         for folder in self.config:
             for group in self.config[folder]: 
+                json_d = get_encodable_dict(group)
                 self.session.post(f"{self.endpoint_folders}", json={"title":folder})
-                res: requests.Response = self.session.post(f"{self.endpoint}/{folder}", json=group)
+                res: requests.Response = self.session.post(f"{self.endpoint}/{folder}", json=json_d)
                 if res.status_code not in AcceptableCodes.list():
                     raise requests.HTTPError(f"[{res.status_code}] : {res.content}")
             responses.append(res)
