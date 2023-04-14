@@ -11,7 +11,7 @@ Grafana API is high level API  and it wraps some of the `grafanalib` API.
 The following features are implemented :
 
 - [x] Add an alert
-- [x] Add an dashboard
+- [x] Add a dashboard
 - [x] Add a contact point
 - [x] Add a notification policy
 
