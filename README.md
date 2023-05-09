@@ -1,10 +1,84 @@
+# How to run 
+
 Run with 
 
 ```
 docker-compose --env-file .env.dev up
 ```
 
-# Grafana API
+
+## Docker compose file
+Here is the docker dependencies of `docker-compose.yaml`
+
+```mermaid
+flowchart TD
+    A[Postgres] --> B(Backend service)
+    A[Postgres] --> C(Keycloak)
+    D[Grafana]
+    E[InfluxDB]
+    F[Apache]
+```
+## Set Grafana keycloak authentification 
+
+Keycloak : 
+- Click master -> Create Realm named `Test`
+- Switch to the `Test` realm
+- Click on Clients
+- Click on Create client
+- Set Client Id to `grafana`
+- Next
+- Switch on Client authentification
+- Next
+- Next
+- Switch to the credentials tab
+- Copy the secret
+
+Grafana
+- Adjust the `auth.generic_oauth` of the  configuration file `./containers/grafana/config.ini`
+
+```ini
+[auth.generic_oauth]
+enabled = true
+name = Keycloak-OAuth
+allow_sign_up = true
+client_id = grafana
+client_secret = <You copied secret>
+scopes = openid email profile offline_access roles
+email_attribute_path = email
+login_attribute_path = username
+name_attribute_path = full_name
+auth_url = http://localhost:8081/realms/Test/protocol/openid-connect/auth
+# Address inside docker network
+token_url = http://keycloak:8080/realms/Test/protocol/openid-connect/token
+api_url = http://keycloak:8080/realms/Test/protocol/openid-connect/userinfo
+role_attribute_path = contains(roles[*], 'admin') && 'Admin' || contains(roles[*], 'editor') && 'Editor' || 'Viewer'
+```
+
+There you go !
+
+## Download spreadsheet
+
+In order to download a spreadsheet from google we use the following endpoint : 
+
+```
+https://docs.google.com/spreadsheets/d/{self.id}/gviz/tq?tqx=out:{self.what}&gid={self.gid}
+```
+
+Helper script is inside `spreadsheet/`, you need to fill the `config.example.toml` and rename it to `config.toml`.
+
+
+Each section is read and downloaded
+
+Config of toml file : 
+
+| Attribute   | Type   | Comment                            |
+|-------------|--------|------------------------------------|
+| id          | str    | Id of the spreadsheet              |
+| gid         | number | Number of the sheet                |
+| export_type | str    | Type of export you want (csv, pdf) |
+| output_file | str    | Where to save the file             |
+
+## Grafana API
 
 Grafana API is high level API  and it wraps some of the `grafanalib` API. 
 
@@ -15,10 +89,7 @@ The following features are implemented :
 - [x] Add a contact point
 - [x] Add a notification policy
 
-To do : 
-
-- [ ] Add a datasource
-## Add a contact point 
+#### Add a contact point 
 
 ```python
     from addons.contact import ContactPointEmail, ContactPointEmailSettings
@@ -40,7 +111,7 @@ To do :
     notification_manager.push()
 ```
 
-## Add a notification policy
+#### Add a notification policy
 
 ```python
     from addons.notification_policies import Notification, RegexMatcher, GrafanaMatchType
@@ -65,7 +136,7 @@ To do :
     notification_manager.push()
 ```
 
-## Add an alert
+### Add an alert
 
 Adding an alert is quite tricky, It relies on the Alert models from the grafanalib package. 
 Please see 
@@ -147,7 +218,7 @@ It is much more easier to start from this example and build your own rule.
 
 ```
 
-## Add a Dashboard
+### Add a Dashboard
 
 ```python 
     from dashboard_manager import DashboardManager
@@ -216,7 +287,7 @@ It is much more easier to start from this example and build your own rule.
     dashboard_manager.push()
 ```
 
-## Build a flux query 
+### Build a flux query 
 
 ```python
 query = (
@@ -234,3 +305,19 @@ from(bucket: "My bucket")
     |> range(start: 5m , stop: 2m)
     |> filter(fn: (r) => r["_measurement"] == "my_var")
 ```
+
+
+## To do 
+
+### Django
+
+- [ ] Integrate authentification  `keycloak` with `django allauth`
+- [ ] 
+### Grafana API
+
+- [ ] Add a datasource
+
+### Grafana and keycloak
+- [x] Add a keycloak user.
+
+ 

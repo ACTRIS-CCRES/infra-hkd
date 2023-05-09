@@ -1,3 +1,6 @@
+# Spreadsheet
+config.toml
+
 # Docker 
 containers/backend
 containers/grafana/data

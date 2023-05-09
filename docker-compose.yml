@@ -4,9 +4,10 @@ version: '3.5'
 services:
   postgres:
     container_name: postgres
-    image: postgres:15-alpine
+    image: postgres:10.23-alpine
     user: "$UID:$GID"
     environment:
+      - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - PGDATA=/data/postgres
@@ -14,7 +15,6 @@ services:
       - ./containers/postgres/data/:/data/postgres
     ports:
       - "5432:5432"
-    restart: unless-stopped
 
   grafana:
     container_name: grafana
@@ -35,14 +35,13 @@ services:
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
     volumes:
       - ./containers/grafana/data/:/var/lib/grafana
-      - ./containers/grafana/config.ini:/usr/local/etc/grafana/grafana.ini
+      - ./containers/grafana/config.ini:/etc/grafana/grafana.ini
       - ./containers/grafana/provisioning:/etc/grafana/provisioning
 
   influxdb:
     container_name: influxdb
-    image: influxdb:2.6-alpine
+    image: influxdb:2.7-alpine
     user: "$UID:$GID"
-    restart: always
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=${DOCKER_INFLUXDB_INIT_USERNAME}
@@ -62,5 +61,22 @@ services:
     user: "$UID:$GID"
     ports:
     - '8080:80'
-    # volumes:
-      # - ./containers/apache/httpd.conf:/usr/local/apache2/conf/httpd.conf
+  keycloak:
+    container_name: keycloak
+    image: bitnami/keycloak:21.1.1
+    user: "$UID:$GID"
+    ports:
+      - 8081:8080
+    environment:
+      KEYCLOAK_CREATE_ADMIN_USER: $KEYCLOAK_CREATE_ADMIN_USER
+      KEYCLOAK_ADMIN_USER: $KEYCLOAK_ADMIN_USER
+      KEYCLOAK_ADMIN_PASSWORD: $KEYCLOAK_ADMIN_PASSWORD
+      KEYCLOAK_MANAGEMENT_USER: $KEYCLOAK_MANAGEMENT_USER
+      KEYCLOAK_MANAGEMENT_PASSWORD: $KEYCLOAK_MANAGEMENT_PASSWORD
+      KEYCLOAK_DATABASE_HOST: postgres
+      KEYCLOAK_DATABASE_PORT: 5432
+      KEYCLOAK_DATABASE_NAME: $POSTGRES_DB
+      KEYCLOAK_DATABASE_USER: $POSTGRES_USER 
+      KEYCLOAK_DATABASE_PASSWORD: $POSTGRES_PASSWORD
+    depends_on:
+      - postgres
