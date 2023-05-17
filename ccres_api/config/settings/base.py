@@ -40,10 +40,14 @@ LOCALE_PATHS = [str(BASE_DIR / "locale")]
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 
 DATABASES = {
-    "default": env.db(
-        "DATABASE_URL",
-        default="postgres:///ccres_api",
-    ),
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "postgres_db",
+        "USER": "postgres",
+        "PASSWORD": "postgres",
+        "HOST": "postgres",
+        "PORT": "5432",
+    }
 }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 # https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-DEFAULT_AUTO_FIELD
@@ -75,6 +79,7 @@ THIRD_PARTY_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
+    "allauth.socialaccount.providers.keycloak",
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
@@ -276,6 +281,16 @@ SOCIALACCOUNT_ADAPTER = "ccres_api.users.adapters.SocialAccountAdapter"
 # https://django-allauth.readthedocs.io/en/latest/forms.html
 SOCIALACCOUNT_FORMS = {"signup": "ccres_api.users.forms.UserSocialSignupForm"}
 
+SOCIALACCOUNT_PROVIDERS = {
+    "keycloak": {
+        "APP": {
+            "client_id": "actris-ccres-django",
+            "secret": "5493ad18-938c-4a61-8061-5c58b7ba0624",
+        },
+        "KEYCLOAK_URL": "https://sso.aeris-data.fr/auth",
+        "KEYCLOAK_REALM": "aeris",
+    }
+}
 # django-rest-framework
 # -------------------------------------------------------------------------------
 # django-rest-framework - https://www.django-rest-framework.org/api-guide/settings/
