@@ -4,7 +4,7 @@ version: '3.5'
 services:
   postgres:
     container_name: postgres
-    image: postgres:10.23-alpine
+    image: postgres:15-alpine
     user: "$UID:$GID"
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
@@ -16,6 +16,24 @@ services:
     ports:
       - "5432:5432"
 
+  django:
+    container_name: django
+    build: 
+      context: ./
+      dockerfile: ./containers/backend/Dockerfile
+    user: "$UID:$GID"
+    volumes:
+      - ./ccres_api/:/src/
+    ports: 
+      - '8000:8000'
+    command:
+      - /bin/bash
+      - -c
+      - |
+        python /src/manage.py makemigrations
+        python /src/manage.py migrate
+        python /src/manage.py runserver_plus "0.0.0.0:8000"
+
   grafana:
     container_name: grafana
     # Alpine by default
@@ -26,6 +44,7 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USERNAME}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_LOG_LEVEL=debug
       # Use to init provisionning
       - DOCKER_INFLUXDB_INIT_USERNAME=${DOCKER_INFLUXDB_INIT_USERNAME}
       - DOCKER_INFLUXDB_INIT_PASSWORD=${DOCKER_INFLUXDB_INIT_PASSWORD}
@@ -61,6 +80,7 @@ services:
     user: "$UID:$GID"
     ports:
     - '8080:80'
+
   keycloak:
     container_name: keycloak
     image: bitnami/keycloak:21.1.1

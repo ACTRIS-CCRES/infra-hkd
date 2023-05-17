@@ -2,7 +2,7 @@
 config.toml
 
 # Docker 
-containers/backend
+containers/backend/data
 containers/grafana/data
 containers/apache/data
 containers/influxdb/data
