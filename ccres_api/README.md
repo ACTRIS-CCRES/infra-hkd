@@ -27,7 +27,7 @@ For convenience, you can keep your normal user logged in on Chrome and your supe
 
 Running type checks with mypy:
 
-    $ mypy ccres_api
+    $ mypy CCRES API
 
 ### Test coverage
 

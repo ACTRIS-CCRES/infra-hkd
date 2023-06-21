@@ -1,0 +1,170 @@
+# Use postgres/example user/password credentials
+version: "3.5"
+
+networks:
+  ccres:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.0.0/16
+          gateway: 172.25.0.1
+
+services:
+  postgres_keycloak:
+    container_name: postgres_keycloak
+    image: postgres:15-alpine
+    user: "$UID:$GID"
+    environment:
+      - POSTGRES_DB=${POSTGRES_KEYCLOAK_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/data/postgres
+    volumes:
+      - ./containers/postgres/keycloak/data/:/data/postgres
+    ports:
+      - "${POSTGRES_KEYCLOAK_PORT}:${POSTGRES_KEYCLOAK_PORT}"
+    command: -p ${POSTGRES_KEYCLOAK_PORT}
+    networks:
+      ccres:
+        ipv4_address: 172.25.0.10
+
+  postgres_django:
+    container_name: postgres_django
+    image: postgres:15-alpine
+    user: "$UID:$GID"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DJANGO_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/data/postgres
+    volumes:
+      - ./containers/postgres/django/data/:/data/postgres
+    ports:
+      - "${POSTGRES_DJANGO_PORT}:${POSTGRES_DJANGO_PORT}"
+    command: -p ${POSTGRES_DJANGO_PORT}
+    networks:
+      ccres:
+        ipv4_address: 172.25.0.11
+
+  django:
+    container_name: django
+    build:
+      context: ./
+      dockerfile: ./containers/ccres_api/Dockerfile
+    user: "$UID:$GID"
+    volumes:
+      - ./ccres_api/:/src/
+    ports:
+      - ${DJANGO_PORT}:8000
+    command:
+      - /bin/bash
+      - -c
+      - |
+        yes y | python /src/manage.py makemigrations
+        yes y | python /src/manage.py migrate
+        python /src/manage.py runserver_plus "0.0.0.0:8000"
+    environment:
+      - SOCIAL_AUTH_LOGIN_REDIRECT_URL=${SOCIAL_AUTH_LOGIN_REDIRECT_URL}
+      - SOCIAL_AUTH_KEYCLOAK_REALM=${SOCIAL_AUTH_KEYCLOAK_REALM}
+      - SOCIAL_AUTH_KEYCLOAK_DOMAIN=${SOCIAL_AUTH_KEYCLOAK_DOMAIN}
+      - SOCIAL_AUTH_KEYCLOAK_KEY=${SOCIAL_AUTH_KEYCLOAK_KEY}
+      - SOCIAL_AUTH_KEYCLOAK_SECRET=${SOCIAL_AUTH_KEYCLOAK_SECRET}
+      - SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY=${SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY}
+      - POSTGRES_DB=${POSTGRES_DJANGO_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=postgres_django
+      - POSTGRES_PORT=${POSTGRES_DJANGO_PORT}
+      # - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      # - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+      # - DJANGO_SECURE_SSL_REDIRECT=${DJANGO_SECURE_SSL_REDIRECT}
+      # - DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS=${DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS}
+      # - DJANGO_SECURE_HSTS_PRELOAD=${DJANGO_SECURE_HSTS_PRELOAD}
+      # - DJANGO_SECURE_CONTENT_TYPE_NOSNIFF=${DJANGO_SECURE_CONTENT_TYPE_NOSNIFF}
+      # - DJANGO_SERVER_EMAIL=${DJANGO_SERVER_EMAIL}
+      # - DJANGO_ADMIN_URL=${DJANGO_ADMIN_URL}
+      # - DJANGO_DEBUG=${DJANGO_DEBUG}
+    networks:
+      ccres:
+        ipv4_address: 172.25.0.12
+
+  keycloak:
+    container_name: keycloak
+    image: bitnami/keycloak:21.1.1
+    user: "$UID:$GID"
+    ports:
+      - ${KEYCLOAK_PORT}:8080
+    environment:
+      - KEYCLOAK_CREATE_ADMIN_USER=$KEYCLOAK_CREATE_ADMIN_USER
+      - KEYCLOAK_ADMIN_USER=$KEYCLOAK_ADMIN_USER
+      - KEYCLOAK_ADMIN_PASSWORD=$KEYCLOAK_ADMIN_PASSWORD
+      - KEYCLOAK_MANAGEMENT_USER=$KEYCLOAK_MANAGEMENT_USER
+      - KEYCLOAK_MANAGEMENT_PASSWORD=$KEYCLOAK_MANAGEMENT_PASSWORD
+      - KEYCLOAK_DATABASE_HOST=postgres_keycloak
+      - KEYCLOAK_DATABASE_PORT=$POSTGRES_KEYCLOAK_PORT
+      - KEYCLOAK_DATABASE_NAME=$POSTGRES_KEYCLOAK_DB
+      - KEYCLOAK_DATABASE_USER=$POSTGRES_USER
+      - KEYCLOAK_DATABASE_PASSWORD=$POSTGRES_PASSWORD
+    depends_on:
+      - postgres_keycloak
+    networks:
+      ccres:
+        ipv4_address: 172.25.0.13
+
+  grafana:
+    container_name: grafana
+    # Alpine by default
+    image: grafana/grafana-oss:9.4.7
+    user: "$UID:$GID"
+    ports:
+      - "${GRAFANA_PORT}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USERNAME}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_LOG_LEVEL=debug
+      # Use to init provisionning
+      - DOCKER_INFLUXDB_INIT_USERNAME=${DOCKER_INFLUXDB_INIT_USERNAME}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${DOCKER_INFLUXDB_INIT_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${DOCKER_INFLUXDB_INIT_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
+      - DOCKER_INFLUXDB_INIT_RETENTION=${DOCKER_INFLUXDB_INIT_RETENTION}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
+    volumes:
+      - ./containers/grafana/data/:/var/lib/grafana
+      - ./containers/grafana/config.ini:/etc/grafana/grafana.ini
+      - ./containers/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      ccres:
+        ipv4_address: 172.25.0.14
+
+  influxdb:
+    container_name: influxdb
+    image: influxdb:2.7-alpine
+    user: "$UID:$GID"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${DOCKER_INFLUXDB_INIT_USERNAME}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${DOCKER_INFLUXDB_INIT_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${DOCKER_INFLUXDB_INIT_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
+      - DOCKER_INFLUXDB_INIT_RETENTION=${DOCKER_INFLUXDB_INIT_RETENTION}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
+    ports:
+      - "${INFLUXDB_PORT}:8086"
+    volumes:
+      - ./containers/influxdb/data/:/var/lib/influxdb
+      - ./containers/influxdb/scripts:/docker-entrypoint-initdb.d
+    networks:
+      ccres:
+        ipv4_address: 172.25.0.15
+
+  apache:
+    container_name: apache
+    image: httpd:alpine3.17
+    user: "$UID:$GID"
+    ports:
+      - "${APACHE_PORT}:80"
+    networks:
+      ccres:
+        ipv4_address: 172.25.0.16

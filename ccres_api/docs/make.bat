@@ -10,8 +10,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=_source
 set BUILDDIR=_build
-set APP=..\ccres_api
-
+ccres_api
 if "%1" == "" goto help
 
 %SPHINXBUILD% >NUL 2>NUL

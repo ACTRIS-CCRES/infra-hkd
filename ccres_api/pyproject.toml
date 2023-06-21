@@ -1,10 +1,10 @@
 # ==== pytest ====
 [tool.pytest.ini_options]
-minversion = "6.0"
 addopts = "--ds=config.settings.test --reuse-db"
+minversion = "6.0"
 python_files = [
-    "tests.py",
-    "test_*.py",
+  "tests.py",
+  "test_*.py",
 ]
 
 # ==== Coverage ====
@@ -13,61 +13,57 @@ include = ["ccres_api/**"]
 omit = ["*/migrations/*", "*/tests/*"]
 plugins = ["django_coverage_plugin"]
 
-
 # ==== black ====
 [tool.black]
 line-length = 119
 target-version = ['py311']
 
-
 # ==== isort ====
 [tool.isort]
-profile = "black"
-line_length = 119
 known_first_party = [
-    "ccres_api",
-    "config",
+  "ccres_api",
+  "config",
 ]
+line_length = 119
+profile = "black"
 skip = ["venv/"]
 skip_glob = ["**/migrations/*.py"]
 
-
 # ==== mypy ====
 [tool.mypy]
-python_version = "3.11"
 check_untyped_defs = true
 ignore_missing_imports = true
-warn_unused_ignores = true
+plugins = [
+  "mypy_django_plugin.main",
+  "mypy_drf_plugin.main",
+]
+python_version = "3.11"
 warn_redundant_casts = true
 warn_unused_configs = true
-plugins = [
-    "mypy_django_plugin.main",
-    "mypy_drf_plugin.main",
-]
+warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
 # Django migrations should not produce any errors:
-module = "*.migrations.*"
 ignore_errors = true
+module = "*.migrations.*"
 
 [tool.django-stubs]
 django_settings_module = "config.settings.test"
 
-
 # ==== PyLint ====
 [tool.pylint.MASTER]
-load-plugins = [
-    "pylint_django",
-]
 django-settings-module = "config.settings.local"
+load-plugins = [
+  "pylint_django",
+]
 
 [tool.pylint.FORMAT]
 max-line-length = 119
 
 [tool.pylint."MESSAGES CONTROL"]
 disable = [
-    "missing-docstring",
-    "invalid-name",
+  "missing-docstring",
+  "invalid-name",
 ]
 
 [tool.pylint.DESIGN]
@@ -75,10 +71,10 @@ max-parents = 13
 
 [tool.pylint.TYPECHECK]
 generated-members = [
-    "REQUEST",
-    "acl_users",
-    "aq_parent",
-    "[a-zA-Z]+_set{1,2}",
-    "save",
-    "delete",
+  "REQUEST",
+  "acl_users",
+  "aq_parent",
+  "[a-zA-Z]+_set{1,2}",
+  "save",
+  "delete",
 ]

@@ -2,7 +2,7 @@
 Base settings to build other settings files upon.
 """
 from pathlib import Path
-
+import logging
 import environ
 
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
@@ -39,17 +39,23 @@ LOCALE_PATHS = [str(BASE_DIR / "locale")]
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 
+DB_NAME = env("POSTGRES_DB")
+DB_USER = env("POSTGRES_USER")
+DB_PASSWORD = env("POSTGRES_PASSWORD")
+DB_HOST = env("POSTGRES_HOST")
+DB_PORT = env.int("POSTGRES_PORT")
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "postgres_db",
-        "USER": "postgres",
-        "PASSWORD": "postgres",
-        "HOST": "postgres",
-        "PORT": "5432",
+        "NAME": DB_NAME,
+        "USER": DB_USER,
+        "PASSWORD": DB_PASSWORD,
+        "HOST": DB_HOST,
+        "PORT": DB_PORT,
     }
 }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
+
 # https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-DEFAULT_AUTO_FIELD
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -76,41 +82,29 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
-    "allauth",
-    "allauth.account",
-    "allauth.socialaccount",
-    "allauth.socialaccount.providers.keycloak",
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
     "drf_spectacular",
+    "social_django",
 ]
 
-LOCAL_APPS = [
-    "ccres_api.users",
-    # Your stuff: custom apps go here
-]
+LOCAL_APPS = ["users", "hkd"]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 # MIGRATIONS
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#migration-modules
-MIGRATION_MODULES = {"sites": "ccres_api.contrib.sites.migrations"}
+# MIGRATION_MODULES = {"sites": "cress_api.contrib.sites.migrations"}
 
 # AUTHENTICATION
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#authentication-backends
 AUTHENTICATION_BACKENDS = [
+    "social_core.backends.keycloak.KeycloakOAuth2",
     "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend",
 ]
-# https://docs.djangoproject.com/en/dev/ref/settings/#auth-user-model
-AUTH_USER_MODEL = "users.User"
-# https://docs.djangoproject.com/en/dev/ref/settings/#login-redirect-url
-LOGIN_REDIRECT_URL = "users:redirect"
-# https://docs.djangoproject.com/en/dev/ref/settings/#login-url
-LOGIN_URL = "account_login"
 
 # PASSWORDS
 # ------------------------------------------------------------------------------
@@ -135,6 +129,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/dev/ref/settings/#middleware
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "social_django.middleware.SocialAuthExceptionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -189,7 +184,8 @@ TEMPLATES = [
                 "django.template.context_processors.static",
                 "django.template.context_processors.tz",
                 "django.contrib.messages.context_processors.messages",
-                "ccres_api.users.context_processors.allauth_settings",
+                "social_django.context_processors.backends",
+                "social_django.context_processors.login_redirect",
             ],
         },
     }
@@ -259,38 +255,32 @@ LOGGING = {
 }
 
 
-# django-allauth
+# Python social auth application
 # ------------------------------------------------------------------------------
-ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
-# https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_AUTHENTICATION_METHOD = "email"
-# https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_EMAIL_REQUIRED = True
-# https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_USERNAME_REQUIRED = False
-# https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-# https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-# https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_ADAPTER = "ccres_api.users.adapters.AccountAdapter"
-# https://django-allauth.readthedocs.io/en/latest/forms.html
-ACCOUNT_FORMS = {"signup": "ccres_api.users.forms.UserSignupForm"}
-# https://django-allauth.readthedocs.io/en/latest/configuration.html
-SOCIALACCOUNT_ADAPTER = "ccres_api.users.adapters.SocialAccountAdapter"
-# https://django-allauth.readthedocs.io/en/latest/forms.html
-SOCIALACCOUNT_FORMS = {"signup": "ccres_api.users.forms.UserSocialSignupForm"}
+SOCIAL_AUTH_JSONFIELD_ENABLED = True
 
-SOCIALACCOUNT_PROVIDERS = {
-    "keycloak": {
-        "APP": {
-            "client_id": "actris-ccres-django",
-            "secret": "5493ad18-938c-4a61-8061-5c58b7ba0624",
-        },
-        "KEYCLOAK_URL": "https://sso.aeris-data.fr/auth",
-        "KEYCLOAK_REALM": "aeris",
-    }
-}
+SOCIAL_AUTH_PIPELINE = (
+    "social_core.pipeline.social_auth.social_details",
+    "social_core.pipeline.social_auth.social_uid",
+    "social_core.pipeline.social_auth.auth_allowed",
+    "social_core.pipeline.social_auth.social_user",
+    "social_core.pipeline.user.get_username",
+    "social_core.pipeline.user.create_user",
+    "social_core.pipeline.social_auth.associate_user",
+    "social_core.pipeline.social_auth.load_extra_data",
+    "social_core.pipeline.user.user_details",
+    "users.backend.save_group",
+)
+
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = env("SOCIAL_AUTH_LOGIN_REDIRECT_URL")
+SOCIAL_AUTH_KEYCLOAK_REALM = env("SOCIAL_AUTH_KEYCLOAK_REALM")
+SOCIAL_AUTH_KEYCLOAK_DOMAIN = env("SOCIAL_AUTH_KEYCLOAK_DOMAIN")
+SOCIAL_AUTH_KEYCLOAK_KEY = env("SOCIAL_AUTH_KEYCLOAK_KEY")
+SOCIAL_AUTH_KEYCLOAK_SECRET = env("SOCIAL_AUTH_KEYCLOAK_SECRET")
+SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY = env("SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY")
+SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL = f"{SOCIAL_AUTH_KEYCLOAK_DOMAIN}/realms/{SOCIAL_AUTH_KEYCLOAK_REALM}/protocol/openid-connect/auth"
+SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL = f"{SOCIAL_AUTH_KEYCLOAK_DOMAIN}/realms/{SOCIAL_AUTH_KEYCLOAK_REALM}/protocol/openid-connect/token"
+SOCIAL_AUTH_KEYCLOAK_ID_KEY = "email"
 # django-rest-framework
 # -------------------------------------------------------------------------------
 # django-rest-framework - https://www.django-rest-framework.org/api-guide/settings/
@@ -305,11 +295,10 @@ REST_FRAMEWORK = {
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
 CORS_URLS_REGEX = r"^/api/.*$"
-
 # By Default swagger ui is available only to admin user(s). You can change permission classes to change that
 # See more configuration options at https://drf-spectacular.readthedocs.io/en/latest/settings.html#settings
 SPECTACULAR_SETTINGS = {
-    "TITLE": "CCRES API API",
+    "TITLE": "CCRES API",
     "DESCRIPTION": "Documentation of API endpoints of CCRES API",
     "VERSION": "1.0.0",
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
