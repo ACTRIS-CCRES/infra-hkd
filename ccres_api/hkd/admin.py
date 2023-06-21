@@ -4,6 +4,8 @@ from .models import (
     Influx,
     InfluxSource,
     Instrument,
+    InstrumentModel,
+    InstrumentCategory,
     Grafana,
     GrafanaDashboard,
     GrafanaPanel,
@@ -30,6 +32,20 @@ class InstrumentAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Instrument, InstrumentAdmin)
+
+
+class InstrumentModelAdmin(admin.ModelAdmin):
+    pass
+
+
+admin.site.register(InstrumentModel, InstrumentModelAdmin)
+
+
+class InstrumentCategoryAdmin(admin.ModelAdmin):
+    pass
+
+
+admin.site.register(InstrumentCategory, InstrumentCategoryAdmin)
 
 
 class GrafanaAdmin(admin.ModelAdmin):
