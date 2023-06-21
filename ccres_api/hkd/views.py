@@ -112,3 +112,4 @@ class AlertDependencyViewSet(viewsets.ModelViewSet):
     serializer_class = AlertDependencySerializer
     queryset = AlertDependency.objects.all()
     permission_class = [IsAuthenticated]
+

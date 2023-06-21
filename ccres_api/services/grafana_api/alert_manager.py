@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 import requests
-from base import AcceptableCodes, get_encodable_dict
+from .base import AcceptableCodes, get_encodable_dict
 from grafanalib.core import AlertGroup
 
 

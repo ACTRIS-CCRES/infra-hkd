@@ -2,9 +2,9 @@
 from typing import Any, Dict, Union
 
 import requests
-from addons.contact import ContactPoint
-from addons.notification_policies import Notification
-from base import AcceptableCodes, get_encodable_dict
+from .addons.contact import ContactPoint
+from .addons.notification_policies import Notification
+from .base import AcceptableCodes, get_encodable_dict
 from grafanalib.core import Dashboard
 
 class DashboardManager:

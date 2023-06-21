@@ -9,8 +9,20 @@ License: GPLv3
 
 ## Settings
 
+They are based on the cookiecutter settings  : 
+
 Moved to [settings](http://cookiecutter-django.readthedocs.io/en/latest/settings.html).
 
+Project specific settings are also defined : 
+### Grafana settings 
+
+| Environment Variable  | Django Setting        | Description                                                                   |
+|-----------------------|-----------------------|-------------------------------------------------------------------------------|
+| GRAFANA_URL           | GRAFANA_URL           | Grafana Url                                                                   |
+| GRAFANA_AUTH_USERNAME | GRAFANA_AUTH_USERNAME | Grafana username if basic authentification (needs also GRAFANA_AUTH_PASSWORD) |
+| GRAFANA_AUTH_PASSWORD | GRAFANA_AUTH_PASSWORD | Grafana password if basic authentification (needs also GRAFANA_AUTH_USERNAME) |
+| GRAFANA_AUTH_TOKEN    | GRAFANA_AUTH_TOKEN    | Grafana API Token                                                             | 
+               
 ## Basic Commands
 
 ### Setting Up Your Users

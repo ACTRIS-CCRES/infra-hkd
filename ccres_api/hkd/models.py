@@ -1,3 +1,4 @@
+from typing import Iterable, Optional
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -168,8 +169,8 @@ class Preprocessing(models.Model):
 
 
 class AlertContact(models.Model):
-    name = models.CharField(max_length=100)
-    email = models.CharField(max_length=200)
+    name = models.TextField()
+    email = models.TextField()
 
     class Meta:
         verbose_name = "Contact for alerting"

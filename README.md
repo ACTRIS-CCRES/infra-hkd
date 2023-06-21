@@ -3,7 +3,7 @@
 Run with 
 
 ```
-docker-compose --env-file .env.local -f local.yml up
+docker compose --env-file .env.local -f local.yml up --build
 ```
 
 ## Docker compose file

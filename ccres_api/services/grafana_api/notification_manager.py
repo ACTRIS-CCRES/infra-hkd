@@ -1,10 +1,9 @@
-
 from typing import Any, Dict, Union
 
 import requests
-from addons.contact import ContactPoint
-from addons.notification_policies import Notification
-from base import AcceptableCodes,get_encodable_dict
+from .addons.contact import ContactPoint
+from .addons.notification_policies import Notification
+from .base import AcceptableCodes, get_encodable_dict
 
 
 class NotificationManager:
@@ -13,6 +12,7 @@ class NotificationManager:
     We can add multiple contact points or notification policies and then we push
     to the grafana
     """
+
     def __init__(self, url: str, session: requests.Response):
         self.url = url
         self.session = session
@@ -29,7 +29,7 @@ class NotificationManager:
         return self.config
 
     def add_contact_point(
-        self, contact_point: Union[ContactPoint, Dict[Any,Any]]
+        self, contact_point: Union[ContactPoint, Dict[Any, Any]]
     ) -> "NotificationManager":
         if isinstance(contact_point, ContactPoint):
             name = contact_point.name
@@ -47,7 +47,7 @@ class NotificationManager:
         return self
 
     def add_notification_policy(
-        self, notification_policy: Union[Notification, Dict[Any,Any]]
+        self, notification_policy: Union[Notification, Dict[Any, Any]]
     ) -> "NotificationManager":
         if isinstance(notification_policy, Notification):
             notification_dict = notification_policy.to_json_data()
@@ -62,6 +62,6 @@ class NotificationManager:
         if res.status_code not in AcceptableCodes.list():
             msg = f"[{res.status_code}] : {res.content}"
             if res.status_code == 400:
-                msg += "\nMaybe the contact point does not exist ?" 
+                msg += "\nMaybe the contact point does not exist ?"
             raise requests.HTTPError(msg)
         return res

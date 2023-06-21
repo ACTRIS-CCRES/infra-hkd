@@ -303,5 +303,10 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
 }
-# Your stuff...
+
+# GRAFANA SETTINGS
 # ------------------------------------------------------------------------------
+GRAFANA_API_URL = env("DJANGO_GRAFANA_API_URL")
+GRAFANA_AUTH_USERNAME = env("DJANGO_GRAFANA_AUTH_USERNAME", None)
+GRAFANA_AUTH_PASSWORD = env("DJANGO_GRAFANA_AUTH_PASSWORD", None)
+GRAFANA_AUTH_TOKEN = env("DJANGO_GRAFANA_AUTH_TOKEN", None)
