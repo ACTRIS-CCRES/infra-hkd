@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from .base import GrafanaValidator
 from .utils import clean_none
 
+
 class ContactPoint(ABC):
     @abstractmethod
     def to_json_data(self):
@@ -20,7 +21,7 @@ class ContactPointEmailSettings(GrafanaValidator):
 
     Parameters
     ----------
-    
+
     addresses: List[str]
         Email addresses
     singleEmail: bool, by default False
@@ -30,13 +31,14 @@ class ContactPointEmailSettings(GrafanaValidator):
     subject: Optional[str]
         Subject template, by default None
     """
+
     addresses: List[str]
     singleEmail: bool = False
     message: Optional[str] = None
     subject: Optional[str] = None
 
     def to_json_data(self):
-        json_data= {
+        json_data = {
             "addresses": ";".join(self.addresses),
             "singleEmail": self.singleEmail,
             "message": self.message,
@@ -62,6 +64,7 @@ class ContactPointEmail(GrafanaValidator, ContactPoint):
     provenance: Optional[str]
         If this comes from API or UI. Left if blank. by default None
     """
+
     name: str
     settings: ContactPointEmailSettings
     disableResolveMessage: bool = False
@@ -84,7 +87,7 @@ class ContactPointSlackSettings(GrafanaValidator):
 
     Parameters
     ----------
-    
+
     recipient: str
         Who to send to
     token: Optional[str]
@@ -110,6 +113,7 @@ class ContactPointSlackSettings(GrafanaValidator):
     username: Optional[str]
         Name of the bot, by default None
     """
+
     recipient: str
     token: Optional[str] = None
     url: Optional[str] = None
@@ -130,7 +134,7 @@ class ContactPointSlackSettings(GrafanaValidator):
             )
 
     def to_json_data(self):
-        json_data =  {
+        json_data = {
             "recipient": self.recipient,
             "token": self.token,
             "url": self.url,
@@ -162,13 +166,14 @@ class ContactPointSlack(GrafanaValidator, ContactPoint):
     provenance: Optional[str]
         If this comes from API or UI. Left if blank. by default None
     """
+
     name: str
     settings: ContactPointSlackSettings
     disableResolveMessage: bool = False
     provenance: Optional[str] = None
 
     def to_json_data(self):
-        json_data= {
+        json_data = {
             "name": self.name,
             "settings": self.settings.to_json_data(),
             "disableResolveMessage": self.disableResolveMessage,
