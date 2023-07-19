@@ -63,8 +63,12 @@ services:
       - |
         yes y | python /src/manage.py makemigrations
         yes y | python /src/manage.py migrate
+        python /src/manage.py createsuperuser --noinput
         python /src/manage.py runserver_plus "0.0.0.0:8000"
     environment:
+      - DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME}
+      - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD}
+      - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL}
       - SOCIAL_AUTH_LOGIN_REDIRECT_URL=${SOCIAL_AUTH_LOGIN_REDIRECT_URL}
       - SOCIAL_AUTH_KEYCLOAK_REALM=${SOCIAL_AUTH_KEYCLOAK_REALM}
       - SOCIAL_AUTH_KEYCLOAK_DOMAIN=${SOCIAL_AUTH_KEYCLOAK_DOMAIN}
@@ -89,6 +93,8 @@ services:
       # - DJANGO_SERVER_EMAIL=${DJANGO_SERVER_EMAIL}
       # - DJANGO_ADMIN_URL=${DJANGO_ADMIN_URL}
       # - DJANGO_DEBUG=${DJANGO_DEBUG}
+    depends_on:
+      - postgres_django
     networks:
       ccres:
         ipv4_address: 172.25.0.12
@@ -119,7 +125,7 @@ services:
   grafana:
     container_name: grafana
     # Alpine by default
-    image: grafana/grafana-oss:9.4.7
+    image: grafana/grafana-oss:10.0.2
     user: "$UID:$GID"
     ports:
       - "${GRAFANA_PORT}:3000"

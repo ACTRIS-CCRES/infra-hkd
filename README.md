@@ -60,6 +60,10 @@ See https://gitlab.in2p3.fr/gaia-data/wp2-architecture/iam-sso/keycloak-django
 
 There you go !
 
+## Features
+
+- ✅ Adding a contact point in the Django Admin interface creates a contact point in Grafana through signals.
+- ✅ Adding a parameter, an instrument, an instrument model or a station in the Django admin interface creates or updates all the dashboard in Grafana through signals.
 ## To do 
 
 ### Django
