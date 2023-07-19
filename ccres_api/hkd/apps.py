@@ -6,4 +6,6 @@ class HkdConfig(AppConfig):
     name = "hkd"
 
     def ready(self):
-        import hkd.signals  # noqa
+        import hkd.signals.create_dashboards  # noqa
+        import hkd.signals.create_contact  # noqa
+        import hkd.signals.create_alerts  # noqa

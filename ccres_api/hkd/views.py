@@ -10,6 +10,7 @@ from .serializers import (
     GrafanaDashboardSerializer,
     GrafanaPanelSerializer,
     AlertSerializer,
+    AlertContactGroupSerializer,
     AlertContactSerializer,
     AlertDependencySerializer,
     ParameterSerializer,
@@ -25,6 +26,7 @@ from .models import (
     GrafanaDashboard,
     GrafanaPanel,
     Alert,
+    AlertContactGroup,
     AlertContact,
     AlertDependency,
     Parameter,
@@ -96,6 +98,12 @@ class PreprocessingViewSet(viewsets.ModelViewSet):
     permission_class = [IsAuthenticated]
 
 
+class AlertContactGroupViewSet(viewsets.ModelViewSet):
+    serializer_class = AlertContactGroupSerializer
+    queryset = AlertContactGroup.objects.all()
+    permission_class = [IsAuthenticated]
+
+
 class AlertContactViewSet(viewsets.ModelViewSet):
     serializer_class = AlertContactSerializer
     queryset = AlertContact.objects.all()
@@ -112,4 +120,3 @@ class AlertDependencyViewSet(viewsets.ModelViewSet):
     serializer_class = AlertDependencySerializer
     queryset = AlertDependency.objects.all()
     permission_class = [IsAuthenticated]
-

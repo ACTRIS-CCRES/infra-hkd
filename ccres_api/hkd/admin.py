@@ -11,6 +11,7 @@ from .models import (
     GrafanaPanel,
     Alert,
     AlertContact,
+    AlertContactGroup,
     AlertDependency,
     Parameter,
     Preprocessing,
@@ -102,6 +103,13 @@ class PreprocessingAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Preprocessing, PreprocessingAdmin)
+
+
+class AlertContactGroupAdmin(admin.ModelAdmin):
+    pass
+
+
+admin.site.register(AlertContactGroup, AlertContactGroupAdmin)
 
 
 class AlertContactAdmin(admin.ModelAdmin):

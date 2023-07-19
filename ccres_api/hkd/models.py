@@ -1,6 +1,8 @@
 from typing import Iterable, Optional
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.template.defaultfilters import slugify
+import uuid
 
 # Create your models here.
 
@@ -54,6 +56,9 @@ class Station(models.Model):
     class Meta:
         verbose_name = "Station"
 
+    def __str__(self):
+        return f"{self.name}"
+
 
 class InstrumentModel(models.Model):
     """Model of the instrument
@@ -69,6 +74,9 @@ class InstrumentModel(models.Model):
     class Meta:
         verbose_name = "Model of an instrument"
 
+    def __str__(self):
+        return f"{self.model}"
+
 
 class InstrumentCategory(models.Model):
     name = models.CharField(max_length=200)
@@ -76,18 +84,24 @@ class InstrumentCategory(models.Model):
     class Meta:
         verbose_name = "Category of an instrument"
 
+    def __str__(self):
+        return f"{self.name}"
+
 
 class Instrument(models.Model):
     pid = models.URLField()
     date_start = models.DateTimeField()
     date_end = models.DateTimeField()
     is_active = models.BooleanField()
-    instrument_type = models.ForeignKey(InstrumentModel, on_delete=models.DO_NOTHING)
+    instrument_model = models.ForeignKey(InstrumentModel, on_delete=models.DO_NOTHING)
     station = models.ForeignKey(Station, on_delete=models.DO_NOTHING)
     category = models.ForeignKey(InstrumentCategory, on_delete=models.DO_NOTHING)
 
     class Meta:
         verbose_name = "Instrument of station"
+
+    def __str__(self):
+        return f"{self.instrument_model.model} - {self.station.name} - {self.category.name}"
 
 
 class Firmware(models.Model):
@@ -98,6 +112,9 @@ class Firmware(models.Model):
     class Meta:
         verbose_name = "Firmware information"
 
+    def __str__(self):
+        return f"{self.instrument_model.model}  {self.category.version}"
+
 
 class Grafana(models.Model):
     url = models.CharField(max_length=100)
@@ -106,6 +123,9 @@ class Grafana(models.Model):
 
     class Meta:
         verbose_name = "Grafana information"
+
+    def __str__(self):
+        return f"Grafana {self.version} - {self.url}"
 
 
 class GrafanaDashboard(models.Model):
@@ -117,6 +137,9 @@ class GrafanaDashboard(models.Model):
     class Meta:
         verbose_name = "Grafana dashboard information"
 
+    def __str__(self):
+        return f"{self.name}"
+
 
 class GrafanaPanel(models.Model):
     name = models.CharField(max_length=100)
@@ -125,6 +148,9 @@ class GrafanaPanel(models.Model):
 
     class Meta:
         verbose_name = "Grafana panel information"
+
+    def __str__(self):
+        return f"{self.name}"
 
 
 class Influx(models.Model):
@@ -135,6 +161,9 @@ class Influx(models.Model):
     class Meta:
         verbose_name = "Influx information"
 
+    def __str__(self):
+        return f"InfluxDB {self.version}"
+
 
 class InfluxSource(models.Model):
     bucket = models.CharField(max_length=100)
@@ -144,6 +173,9 @@ class InfluxSource(models.Model):
 
     class Meta:
         verbose_name = "Influx source information"
+
+    def __str__(self):
+        return f"Bucket {self.bucket} - {self.influx.version}"
 
 
 class Parameter(models.Model):
@@ -157,6 +189,9 @@ class Parameter(models.Model):
     class Meta:
         verbose_name = "Parameter information"
 
+    def __str__(self):
+        return f"{self.name} - {self.instrument_model.model}"
+
 
 class Preprocessing(models.Model):
     description = models.TextField()
@@ -168,18 +203,33 @@ class Preprocessing(models.Model):
         verbose_name = "Preprocessing of parameter to apply"
 
 
+class AlertContactGroup(models.Model):
+    name = models.TextField(unique=True)
+
+    class Meta:
+        verbose_name = "Group of contact for alerting"
+
+    def __str__(self):
+        return f"{self.name}"
+
+
 class AlertContact(models.Model):
     name = models.TextField()
     email = models.TextField()
+    group = models.ForeignKey(AlertContactGroup, on_delete=models.DO_NOTHING)
 
     class Meta:
         verbose_name = "Contact for alerting"
         unique_together = ("name", "email")
 
+    def __str__(self):
+        return f"{self.name}"
+
 
 class Alert(models.Model):
+    title = models.CharField(max_length=100)
     parameter = models.ForeignKey(Parameter, on_delete=models.DO_NOTHING)
-    contact = models.ForeignKey(AlertContact, on_delete=models.DO_NOTHING)
+    contact_group = models.ForeignKey(AlertContactGroup, on_delete=models.DO_NOTHING)
     evaluation_duration = models.FloatField()
     evaluation_duration_unit = models.CharField(max_length=10, choices=DurationUnit.choices)
     evaluation_processing = models.CharField(max_length=100)
@@ -198,6 +248,11 @@ class Alert(models.Model):
 
     class Meta:
         verbose_name = "Alert of parameter information"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        return super().save(*args, **kwargs)
 
 
 class AlertDependency(models.Model):

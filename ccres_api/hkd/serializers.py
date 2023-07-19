@@ -8,6 +8,7 @@ from .models import (
     GrafanaDashboard,
     GrafanaPanel,
     Alert,
+    AlertContactGroup,
     AlertContact,
     AlertDependency,
     Parameter,
@@ -73,6 +74,12 @@ class FirmwareSerializer(serializers.ModelSerializer):
 class PreprocessingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Preprocessing
+        fields = "__all__"
+
+
+class AlertContactGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AlertContactGroup
         fields = "__all__"
 
 
