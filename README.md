@@ -64,6 +64,7 @@ There you go !
 
 - ✅ Adding a contact point in the Django Admin interface creates a contact point in Grafana through signals.
 - ✅ Adding a parameter, an instrument, an instrument model or a station in the Django admin interface creates or updates all the dashboard in Grafana through signals.
+- ✅ Adding an alert in the Django admin interface creates or updates all the alerts in Grafana through signals.
 ## To do 
 
 ### Django

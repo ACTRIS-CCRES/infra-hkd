@@ -113,7 +113,7 @@ admin.site.register(AlertContactGroup, AlertContactGroupAdmin)
 
 
 class AlertContactAdmin(admin.ModelAdmin):
-    pass
+    filter_horizontal = ["groups"]
 
 
 admin.site.register(AlertContact, AlertContactAdmin)

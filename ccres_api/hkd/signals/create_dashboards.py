@@ -10,7 +10,7 @@ from ..models import (
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from services.grafana_api.addons.folder import Folder
-from config.settings.base import INFLUX_DB_BUCKET
+from config.settings.base import INFLUX_DB_BUCKET, INFLUX_DB_DATASOURCE_NAME
 from ..sessions import get_grafana_session
 from config.settings.base import (
     GRAFANA_API_URL,
@@ -63,7 +63,7 @@ def build_panels(station, instrument_model, parameters):
                 targets=[
                     Target(
                         expr=flux_query,
-                        datasource="InfluxDB",
+                        datasource=INFLUX_DB_DATASOURCE_NAME,
                     ),
                 ],
                 gridPos=GridPos(h=8, w=16, x=0, y=0),

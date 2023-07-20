@@ -1,8 +1,9 @@
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Union
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.template.defaultfilters import slugify
 import uuid
+from django.core.exceptions import ValidationError
 
 # Create your models here.
 
@@ -28,6 +29,21 @@ class BoolOperator(models.TextChoices):
     BOOL_NOT = "bool_not", "NOT"
 
 
+class EvaluateMethod(models.TextChoices):
+    """Evaluate method for CharField"""
+
+    AVG = "avg", "avg"
+    MIN = "min", "min"
+    MAX = "max", "max"
+    SUM = "sum", "sum"
+    COUNT = "count", "count"
+    LAST = "last", "last"
+    MEDIAN = "median", "median"
+    DIFF = "diff", "diff"
+    PERCENT_DIFF = "percent_diff", "percent_diff"
+    COUNT_NON_NULL = "count_non_null", "count_non_null"
+
+
 class DurationUnit(models.TextChoices):
     """Unit of duration for CharField"""
 
@@ -37,6 +53,21 @@ class DurationUnit(models.TextChoices):
     MINUTE = "minute", "minute"
     SECOND = "second", "second"
 
+    @staticmethod
+    def to_seconds(unit: str, value: Union[float, int]) -> int:
+        """
+        https://github.com/grafana/grafana/blob/ac445a25d5a9492414358eb132dc8cd33b5ca209/pkg/services/alerting/rule.go#L17
+        """
+        if unit == "minute":
+            value = float(value) * 60
+        elif unit == "hour":
+            value = 60 * 60
+        elif unit == "day":
+            value = 60 * 60 * 24
+        elif unit == "year":
+            value = 60 * 60 * 24 * 365
+        return int(value)
+
 
 class MessageLevel(models.TextChoices):
     """Message level for CharField"""
@@ -45,6 +76,29 @@ class MessageLevel(models.TextChoices):
     WARNING = "warning", "warning"
     ERROR = "error", "error"
     CRITICAL = "critical", "critical"
+
+
+class AlertContactGroup(models.Model):
+    name = models.TextField(unique=True)
+
+    class Meta:
+        verbose_name = "Group of contact for alerting"
+
+    def __str__(self):
+        return f"{self.name}"
+
+
+class AlertContact(models.Model):
+    name = models.TextField()
+    email = models.TextField()
+    groups = models.ManyToManyField(AlertContactGroup)
+
+    class Meta:
+        verbose_name = "Contact for alerting"
+        unique_together = ("name", "email")
+
+    def __str__(self):
+        return f"{self.name}"
 
 
 class Station(models.Model):
@@ -96,6 +150,7 @@ class Instrument(models.Model):
     instrument_model = models.ForeignKey(InstrumentModel, on_delete=models.DO_NOTHING)
     station = models.ForeignKey(Station, on_delete=models.DO_NOTHING)
     category = models.ForeignKey(InstrumentCategory, on_delete=models.DO_NOTHING)
+    contact_group = models.ForeignKey(AlertContactGroup, on_delete=models.DO_NOTHING)
 
     class Meta:
         verbose_name = "Instrument of station"
@@ -203,56 +258,63 @@ class Preprocessing(models.Model):
         verbose_name = "Preprocessing of parameter to apply"
 
 
-class AlertContactGroup(models.Model):
-    name = models.TextField(unique=True)
-
-    class Meta:
-        verbose_name = "Group of contact for alerting"
-
-    def __str__(self):
-        return f"{self.name}"
-
-
-class AlertContact(models.Model):
-    name = models.TextField()
-    email = models.TextField()
-    group = models.ForeignKey(AlertContactGroup, on_delete=models.DO_NOTHING)
-
-    class Meta:
-        verbose_name = "Contact for alerting"
-        unique_together = ("name", "email")
-
-    def __str__(self):
-        return f"{self.name}"
-
-
 class Alert(models.Model):
     title = models.CharField(max_length=100)
     parameter = models.ForeignKey(Parameter, on_delete=models.DO_NOTHING)
-    contact_group = models.ForeignKey(AlertContactGroup, on_delete=models.DO_NOTHING)
-    evaluation_duration = models.FloatField()
-    evaluation_duration_unit = models.CharField(max_length=10, choices=DurationUnit.choices)
-    evaluation_processing = models.CharField(max_length=100)
-    evaluation_frequency = models.IntegerField()
-    evaluation_frequency_unit = models.CharField(max_length=10, choices=DurationUnit.choices)
+    evaluation_method = models.CharField(
+        max_length=30, choices=EvaluateMethod.choices, default=EvaluateMethod.LAST
+    )
+    evaluation_duration = models.FloatField(default=10.0)
+    evaluation_duration_unit = models.CharField(
+        max_length=10, choices=DurationUnit.choices, default=DurationUnit.MINUTE
+    )
+    evaluation_processing = models.CharField(max_length=100, blank=True)
+    evaluation_frequency = models.FloatField(default=10)
+    evaluation_frequency_unit = models.CharField(
+        max_length=10, choices=DurationUnit.choices, default=DurationUnit.MINUTE
+    )
     message_summary = models.CharField(max_length=100)
     message_description = models.CharField(max_length=1000)
-    message_level = models.CharField(max_length=10, choices=MessageLevel.choices)
-    trigger_minimum = models.FloatField()
-    trigger_maximum = models.FloatField()
-    trigger_condition = models.CharField(max_length=10, choices=Operator.choices)
-    trigger_condition_value = models.FloatField()
-    trigger_value = models.FloatField()
-    trigger_duration = models.FloatField()
-    trigger_duration_unit = models.CharField(max_length=10, choices=DurationUnit.choices)
+    message_level = models.CharField(
+        max_length=10, choices=MessageLevel.choices, default=MessageLevel.ERROR
+    )
+    trigger_minimum = models.FloatField(blank=True, null=True)
+    trigger_minimum_condition = models.CharField(
+        max_length=10, choices=Operator.choices, blank=True, null=True
+    )
+    trigger_maximum = models.FloatField(blank=True, null=True)
+    trigger_maximum_condition = models.CharField(
+        max_length=10, choices=Operator.choices, blank=True, null=True
+    )
+    trigger_duration = models.FloatField(default=30)
+    trigger_duration_unit = models.CharField(
+        max_length=10, choices=DurationUnit.choices, default=DurationUnit.MINUTE
+    )
 
     class Meta:
         verbose_name = "Alert of parameter information"
 
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.title)
-        return super().save(*args, **kwargs)
+    def clean(self):
+        minimum_conditions = [self.trigger_minimum, self.trigger_minimum_condition]
+        maximum_conditions = [self.trigger_maximum, self.trigger_maximum_condition]
+        errors = {}
+        if not any(minimum_conditions) and not any(maximum_conditions):
+            errors["trigger"] = (
+                "Either trigger_minimum and trigger_minimum_condition,"
+                " or trigger_maximum and trigger_maximum_condition,"
+                " or both must be provided together."
+            )
+            raise ValidationError(errors)
+        if any(minimum_conditions) and not all(minimum_conditions):
+            msg = "Both trigger_minimum and trigger_minimum_condition must be provided together."
+            errors["trigger_minimum"] = msg
+            errors["trigger_minimum_condition"] = msg
+        if any(maximum_conditions) and not all(maximum_conditions):
+            msg = "Both trigger_maximum and trigger_maximum_condition must be provided together."
+            errors["trigger_maximum"] = msg
+            errors["trigger_maximum_condition"] = msg
+        if errors:
+            raise ValidationError(errors)
 
 
 class AlertDependency(models.Model):
