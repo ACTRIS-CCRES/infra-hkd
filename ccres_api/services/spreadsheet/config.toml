@@ -1,0 +1,47 @@
+
+[DL]
+
+    [DL.HALO_STREAMLINE]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREfTNimdyT3MmKVMO62-p3xKG4qVYyXXFW7lNS1Dlx0DAxRBcRJ4Ecmacq_RgPm6KmbnPbdsvpuAZz/pub?gid=0&single=true&output=csv"
+
+    [DL.WLS70]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREfTNimdyT3MmKVMO62-p3xKG4qVYyXXFW7lNS1Dlx0DAxRBcRJ4Ecmacq_RgPm6KmbnPbdsvpuAZz/pub?gid=455642039&single=true&output=csv"
+
+    [DL.WLSX00]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREfTNimdyT3MmKVMO62-p3xKG4qVYyXXFW7lNS1Dlx0DAxRBcRJ4Ecmacq_RgPm6KmbnPbdsvpuAZz/pub?gid=347203633&single=true&output=csv"
+
+[MWR]
+    [MWR.RPG_HATPRO]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkg0iT02ChKK5nVJ-Ho1AunIsguf0WMh-ntdtI1_petJSgZC3mbbDW5T6FT9JlIm4u8DSAHkFTBBUo/pub?gid=0&single=true&output=csv"
+
+    [MWR.RADIOMETRICS]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkg0iT02ChKK5nVJ-Ho1AunIsguf0WMh-ntdtI1_petJSgZC3mbbDW5T6FT9JlIm4u8DSAHkFTBBUo/pub?gid=347203633&single=true&output=csv"
+
+[DCR]
+    [DCR.LATMOS_BASTA]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR5nx5QMSFTAXXllmkWf4TAKsLcQKV0bczkIHo-EpYdGy6uO559AFjqBnW0xMJ5z53xN2tuDPzePPOZ/pub?gid=0&single=true&output=csv"
+    [DCR.RPG_FMCW94]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR5nx5QMSFTAXXllmkWf4TAKsLcQKV0bczkIHo-EpYdGy6uO559AFjqBnW0xMJ5z53xN2tuDPzePPOZ/pub?gid=455642039&single=true&output=csv"
+    [DCR.METEK_MIRA35]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR5nx5QMSFTAXXllmkWf4TAKsLcQKV0bczkIHo-EpYdGy6uO559AFjqBnW0xMJ5z53xN2tuDPzePPOZ/pub?gid=347203633&single=true&output=csv "
+
+[DD]
+    [DD.THIES8LNM]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTvMcoV9Ul973OPgBHIVbsNB_M5-DxyDOWQYOXu2oj23OyREeMwX9ETISyuZ6rRjTmAhtnih0XWjUdS/pub?gid=0&single=true&output=csv"
+
+    [DD.OTT_PARSIVEL2]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTvMcoV9Ul973OPgBHIVbsNB_M5-DxyDOWQYOXu2oj23OyREeMwX9ETISyuZ6rRjTmAhtnih0XWjUdS/pub?gid=455642039&single=true&output=csv"
+
+[ALC]
+    [ALC.VAISALA_CL31]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTIe7zyAJPtfE8_hvOqHOkahbvb8LudYwEGBMmNU3EkYOHwW9-XIPJ2vVBK9g7SKK4BXOJ1rc22eUix/pub?gid=0&single=true&output=csv"
+    [ALC.VAISALA_CL51]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTIe7zyAJPtfE8_hvOqHOkahbvb8LudYwEGBMmNU3EkYOHwW9-XIPJ2vVBK9g7SKK4BXOJ1rc22eUix/pub?gid=1628693700&single=true&output=csv"
+    [ALC.VAISALA_CL61]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTIe7zyAJPtfE8_hvOqHOkahbvb8LudYwEGBMmNU3EkYOHwW9-XIPJ2vVBK9g7SKK4BXOJ1rc22eUix/pub?gid=455642039&single=true&output=csv"
+    [ALC.LUFFT_CHM15K]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTIe7zyAJPtfE8_hvOqHOkahbvb8LudYwEGBMmNU3EkYOHwW9-XIPJ2vVBK9g7SKK4BXOJ1rc22eUix/pub?gid=347203633&single=true&output=csv"
+    [ALC.LUFFT_CHM8K]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTIe7zyAJPtfE8_hvOqHOkahbvb8LudYwEGBMmNU3EkYOHwW9-XIPJ2vVBK9g7SKK4BXOJ1rc22eUix/pub?gid=2059449049&single=true&output=csv"
+    [ALC.CS_SKYVUE]
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTIe7zyAJPtfE8_hvOqHOkahbvb8LudYwEGBMmNU3EkYOHwW9-XIPJ2vVBK9g7SKK4BXOJ1rc22eUix/pub?gid=1312243184&single=true&output=csv"

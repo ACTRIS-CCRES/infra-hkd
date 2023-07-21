@@ -1,5 +1,5 @@
 # Spreadsheet
-config.toml
+**/spreadsheet/**/*csv
 
 # Docker 
 containers/backend/data

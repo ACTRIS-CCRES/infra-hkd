@@ -2,27 +2,44 @@ import requests
 import dataclasses
 from typing import Dict
 import toml
+import pathlib
 
-@dataclasses.dataclass
-class GoogleSpreadSheet:
-    id:str
-    gid:int
-    export_type: str = "csv"
-    
-    def download(self, to:str)-> None:
-        response = requests.get(f"https://docs.google.com/spreadsheets/d/{self.id}/gviz/tq?tqx=out:{self.export_type}&gid={self.gid}")
-        if response.status_code != 200:
-            raise ValueError(f"Something went wrong with the spreadsheet {self.id}")
-        with open(to, "w") as f:
-            f.write(response.content.decode("utf-8"))
-        
+RED = "\033[31m"
+GREEN = "\033[32m"
+RESET = "\033[0m"
+GREEN_DOT = f"{GREEN}⬤{RESET}"
+RED_DOT = f"{RED}⬤{RESET}"
+
+
+def download_csv(url: str, to: str) -> None:
+    response = requests.get(url)
+    if response.status_code != 200:
+        print(f" {RED_DOT} Something went wrong with the spreadsheet {url}")
+    with open(to, "w") as f:
+        f.write(response.content.decode("utf-8"))
+
+
+def download(config: str, output_folder: str):
+    _output_folder = pathlib.Path(output_folder)
+    toml_conf = toml.load(config)
+    for instrument_type, instruments in toml_conf.items():
+        for instrument_name, instrument_config in instruments.items():
+            print(f"Treating [{instrument_type}].[{instrument_name}] ...")
+            url = instrument_config.get("url")
+            if url is None:
+                print(f'Cannot find "url" field in [{instrument_type}].[{instrument_name}]')
+                continue
+            output_file = (
+                _output_folder.absolute() / f"{instrument_type}" / f"{instrument_name}.csv"
+            )
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            download_csv(url, str(output_file))
+            print(f"{GREEN_DOT} Spreadsheet {url} saved in {output_file}")
+
 
 def main():
-    config = toml.load("./config.toml")
-    for section, content in config.items():
-        spreadsheet = GoogleSpreadSheet(id=content["id"], gid=content["gid"], export_type=content["export_type"])
-        spreadsheet.download(content["output_file"])
-        print(f"Spreadsheet {section} saved in {content['output_file']}")
+    download("./config.toml", "./csv_export/")
+
 
 if __name__ == "__main__":
     main()
