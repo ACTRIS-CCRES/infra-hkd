@@ -1,41 +1,37 @@
 """
 Signals that are run when a object is saved or updated in the db
 """
-from ..models import Alert, Station, Instrument
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from typing import Type, Dict, Any, Optional, List
-from config.settings.base import INFLUX_DB_BUCKET
-from ..sessions import get_grafana_session
-from config.settings.base import GRAFANA_API_URL, GRAFANA_ALERTS_FOLDER, INFLUX_DB_DATASOURCE_NAME
-from services.grafana_api.query import FluxQueryBuilder
-from grafanalib.core import Target
-from hkd.models import DurationUnit, Operator
-from services.grafana_api.alert_manager import AlertManager
-from services.grafana_api.datasources_manager import DatasourceManager
-from services.grafana_api.addons.alert import AlertRulev9Fixed
-from grafanalib.core import (
-    AlertGroup,
-    Target,
-    AlertCondition,
-    AlertExpression,
-    GreaterThan,
-)
+from typing import Any, Dict, List, Optional, Type
 
+from config.settings.base import (
+    GRAFANA_ALERTS_FOLDER,
+    GRAFANA_API_URL,
+    INFLUX_DB_BUCKET,
+    INFLUX_DB_DATASOURCE_NAME,
+)
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 from grafanalib.core import (
-    AlertGroup,
-    Target,
-    AlertCondition,
-    AlertExpression,
-    GreaterThan,
-    LowerThan,
-    WithinRange,
-    OutsideRange,
-    NoValue,
+    EXP_TYPE_CLASSIC,
     OP_AND,
     RTYPE_LAST,
-    EXP_TYPE_CLASSIC,
+    AlertCondition,
+    AlertExpression,
+    AlertGroup,
+    GreaterThan,
+    LowerThan,
+    NoValue,
+    OutsideRange,
+    Target,
+    WithinRange,
 )
+from hkd.models import Alert, Instrument, Station
+from hkd.models.helpers import DurationUnit, Operator
+from hkd.sessions import get_grafana_session
+from services.grafana_api.addons.alert import AlertRulev9Fixed
+from services.grafana_api.alert_manager import AlertManager
+from services.grafana_api.datasources_manager import DatasourceManager
+from services.grafana_api.query import FluxQueryBuilder
 
 
 def _get_uid_of_datasource(datasource_name: str, folder_json: Dict[Any, Any]) -> Optional[str]:
@@ -95,75 +91,85 @@ def create_conditions(instance: Alert) -> List[AlertCondition]:
     return conditions
 
 
-@receiver(post_save, sender=Alert)
-def create_grafana_alert(sender: Type[Alert], instance: Alert, created, **kwargs):
-    if not created:
-        return None
+def get_alert_group(datasource_uid, alert, parameter, instrument_model, station, contact_group):
+    flux_query = (
+        FluxQueryBuilder(INFLUX_DB_BUCKET)
+        .range(start="v.timeRangeStart", stop="v.timeRangeStop")
+        .filter(on="_measurement", what=instrument_model.model)
+        .filter(on="_field", what=parameter.name)
+        .filter(on="site", what=station.name)
+        .build()
+    )
+    evaluation_frequency_seconds = DurationUnit.to_seconds(
+        alert.evaluation_frequency_unit, alert.evaluation_frequency
+    )
+    evaluation_duration_seconds = DurationUnit.to_seconds(
+        alert.evaluation_duration_unit, alert.evaluation_duration
+    )
+    conditions = create_conditions(alert)
 
+    alertgroup = AlertGroup(
+        name=station.name,
+        evaluateInterval=f"{evaluation_frequency_seconds}s",
+        rules=[
+            AlertRulev9Fixed(
+                title=alert.title,
+                condition="B",
+                triggers=[
+                    Target(
+                        refId="A",
+                        datasource=datasource_uid,
+                        expr=flux_query,
+                    ),
+                    AlertExpression(
+                        refId="B",
+                        expressionType=EXP_TYPE_CLASSIC,
+                        expression="A",
+                        conditions=conditions,
+                    ),
+                ],
+                annotations={
+                    "summary": alert.message_summary,
+                    "description": alert.message_description,
+                },
+                labels={
+                    "team": contact_group.name,
+                },
+                evaluateFor=f"{evaluation_duration_seconds}s",
+            ),
+        ],
+    )
+
+    return alertgroup
+
+
+@receiver(post_save, sender=Alert)
+@receiver(post_delete, sender=Alert)
+def create_grafana_alert(sender: Type[Alert], instance: Alert, **kwargs):
     session = get_grafana_session()
     alert_rule_manager = AlertManager(GRAFANA_API_URL, session)
     datasource_manager = DatasourceManager(GRAFANA_API_URL, session)
     datasource_uid = _get_uid_of_datasource(
         INFLUX_DB_DATASOURCE_NAME, datasource_manager.get_fetched_json()
     )
+    alerts = Alert.objects.all()
 
-    parameter = instance.parameter
-    instrument_model = parameter.instrument_model
+    # If no alerts remove all the folders
+    if len(alerts) == 0:
+        alert_rule_manager.delete_folder(GRAFANA_ALERTS_FOLDER)
 
-    stations = Station.objects.filter(instrument__instrument_model=instrument_model)
+    for alert in alerts:
+        parameter = alert.parameter
+        instrument_model = parameter.instrument_model
 
-    for station in stations:
-        instruments = Instrument.objects.filter(instrument_model=instrument_model)
-        for instrument in instruments:
-            contact_group = instrument.contact_group
-            flux_query = (
-                FluxQueryBuilder(INFLUX_DB_BUCKET)
-                .range(start="v.timeRangeStart", stop="v.timeRangeStop")
-                .filter(on="_measurement", what=instrument_model.model)
-                .filter(on="_field", what=parameter.name)
-                .filter(on="site", what=station.name)
-                .build()
-            )
-            evaluation_frequency_seconds = DurationUnit.to_seconds(
-                instance.evaluation_frequency_unit, instance.evaluation_frequency
-            )
-            evaluation_duration_seconds = DurationUnit.to_seconds(
-                instance.evaluation_duration_unit, instance.evaluation_duration
-            )
-            conditions = create_conditions(instance)
+        stations = Station.objects.filter(instrument__instrument_model=instrument_model)
 
-            alertgroup = AlertGroup(
-                name=station.name,
-                evaluateInterval=f"{evaluation_frequency_seconds}s",
-                rules=[
-                    AlertRulev9Fixed(
-                        title=instance.title,
-                        condition="B",
-                        triggers=[
-                            Target(
-                                refId="A",
-                                datasource=datasource_uid,
-                                expr=flux_query,
-                            ),
-                            AlertExpression(
-                                refId="B",
-                                expressionType=EXP_TYPE_CLASSIC,
-                                expression="A",
-                                conditions=conditions,
-                            ),
-                        ],
-                        annotations={
-                            "summary": instance.message_summary,
-                            "description": instance.message_description,
-                        },
-                        labels={
-                            "team": contact_group.name,
-                        },
-                        evaluateFor=f"{evaluation_duration_seconds}s",
-                    ),
-                ],
-            )
-
-            alert_rule_manager = AlertManager(GRAFANA_API_URL, session)
-            alert_rule_manager.add_alert(alertgroup, folder=GRAFANA_ALERTS_FOLDER)
-        alert_rule_manager.push()
+        for station in stations:
+            instruments = Instrument.objects.filter(instrument_model=instrument_model)
+            for instrument in instruments:
+                contact_group = instrument.contact_group
+                alertgroup = get_alert_group(
+                    datasource_uid, alert, parameter, instrument_model, station, contact_group
+                )
+                alert_rule_manager.add_alert(alertgroup, folder=GRAFANA_ALERTS_FOLDER)
+    alert_rule_manager.push(delete_existing=True)

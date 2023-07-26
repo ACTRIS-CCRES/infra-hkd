@@ -1,6 +1,6 @@
 import requests
 import dataclasses
-from typing import Dict
+from typing import Dict, Optional
 import toml
 import pathlib
 
@@ -14,6 +14,8 @@ RED_DOT = f"{RED}⬤{RESET}"
 def download_csv(url: str, to: str) -> None:
     response = requests.get(url)
     if response.status_code != 200:
+        print(response.content)
+        print(response.status_code)
         print(f" {RED_DOT} Something went wrong with the spreadsheet {url}")
     with open(to, "w") as f:
         f.write(response.content.decode("utf-8"))
@@ -25,10 +27,11 @@ def download(config: str, output_folder: str):
     for instrument_type, instruments in toml_conf.items():
         for instrument_name, instrument_config in instruments.items():
             print(f"Treating [{instrument_type}].[{instrument_name}] ...")
-            url = instrument_config.get("url")
+            url: Optional[str] = instrument_config.get("url")
             if url is None:
                 print(f'Cannot find "url" field in [{instrument_type}].[{instrument_name}]')
                 continue
+            url = url.strip()
             output_file = (
                 _output_folder.absolute() / f"{instrument_type}" / f"{instrument_name}.csv"
             )

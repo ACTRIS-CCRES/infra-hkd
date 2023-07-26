@@ -1,33 +1,18 @@
 """
 Signals that are run when a object is saved or updated in the db
 """
-from ..models import (
-    Parameter,
-    Station,
-    InstrumentModel,
-    Instrument,
-)
+from typing import Any, Dict, Optional
+
+from config.settings.base import GRAFANA_API_URL, INFLUX_DB_BUCKET, INFLUX_DB_DATASOURCE_NAME
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from grafanalib.core import Dashboard, GridPos, Target, TimeSeries
+from hkd.models import Instrument, InstrumentModel, Parameter, Station
+from hkd.sessions import get_grafana_session
 from services.grafana_api.addons.folder import Folder
-from config.settings.base import INFLUX_DB_BUCKET, INFLUX_DB_DATASOURCE_NAME
-from ..sessions import get_grafana_session
-from config.settings.base import (
-    GRAFANA_API_URL,
-)
 from services.grafana_api.dashboard_manager import DashboardManager
 from services.grafana_api.folder_manager import FolderManager
 from services.grafana_api.query import FluxQueryBuilder
-from grafanalib.core import Dashboard, TimeSeries, Target, GridPos
-
-from grafanalib.core import (
-    Target,
-)
-from typing import Dict, Optional, Any
-
-from grafanalib.core import (
-    Target,
-)
 
 
 def _get_uid_of_station(station_name: str, folder_json: Dict[Any, Any]) -> Optional[str]:
